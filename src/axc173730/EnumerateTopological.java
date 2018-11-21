@@ -30,13 +30,16 @@ public class EnumerateTopological extends GraphAlgorithm<EnumerateTopological.En
 		Vertex v = null;
 		while(it.hasNext()) {
 			 v = it.next();
-			if(v.inDegree()==0 && v.outDegree()!=0) {
+			if(v.inDegree()==0 && v.outDegree()!=0 && source==null) {
 				source = v;
 				System.out.println("Source : "+source);
 			}
-			if(v.outDegree()==0 && v.inDegree()!=0) {
+			if(v.outDegree()==0 && v.inDegree()!=0 && target== null) {
 				target= v;
 				System.out.println("target : "+target);
+			}
+			if(source!=null && target!=null) {
+				break;
 			}
 		}
 		if(target==null) {
