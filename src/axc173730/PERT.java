@@ -17,6 +17,7 @@ import java.util.LinkedList;
 import java.util.Scanner;
 
 public class PERT extends GraphAlgorithm<PERT.PERTVertex> {
+	int criticalNodes;
 	int criticalPath;
 	public static class PERTVertex implements Factory {
 		int ec;
@@ -34,7 +35,6 @@ public class PERT extends GraphAlgorithm<PERT.PERTVertex> {
 
 	public PERT(Graph g) {
 		super(g, new PERTVertex(null));
-		pert();
 	}
 
 	public void setDuration(Vertex u, int d) {
@@ -45,7 +45,46 @@ public class PERT extends GraphAlgorithm<PERT.PERTVertex> {
 		return get(u).duration;
 	}
 	public boolean pert() {
+		int criticalNodes = 0;
+		addSourceAndTarget(g);
+		LinkedList<Vertex> topOrder = (LinkedList<Vertex>) DFS.topologicalOrder1(g);
+		if(topOrder==null) {
+			System.out.println("here");
+			return true;
+		}
 		
+		for(Vertex u : topOrder) {
+			for(Edge edge: g.outEdges(u)) {
+				Vertex v = edge.otherEnd(u);
+				int ec = getDuration(v)+ec(u);
+				if(ec > ec(v)) {
+					setEC(v, ec);
+				}
+			}
+		}
+		Vertex t = g.getVertex(g.size());
+		int maxTime = ec(t);
+		for(Vertex u : g) {
+			setLC(u, maxTime);
+		}
+		Iterator<Vertex> it = topOrder.descendingIterator();
+		while(it.hasNext()) {
+			Vertex u = it.next();
+			for(Edge edge : g.outEdges(u)) {
+				Vertex v = edge.otherEnd(u);
+				int lc = lc(v)-getDuration(v);
+				if(lc<lc(u)) {
+					setLC(u, lc);
+				}
+			}
+			int slack = lc(u)-ec(u);
+			setSlack(u, slack);
+			if(slack==0) {
+				criticalNodes++;
+			}
+		}
+		setCriticalNode(criticalNodes);
+		setCriticalPath(ec(t));
 		return false;
 	}
 	public int ec(Vertex u) {
@@ -81,92 +120,58 @@ public class PERT extends GraphAlgorithm<PERT.PERTVertex> {
 	}
 
 	public int numCritical() {
-		return 0;
+		return criticalNodes;
+	}
+
+	public void setCriticalNode(int cn) {
+		criticalNodes = cn;
 	}
 
 	// setDuration(u, duration[u.getIndex()]);
 	public static PERT pert(Graph g, int[] duration) {
 
-		int criticalPath = 0;
 		PERT p = new PERT(g);
-		addSourceAndTarget(p, g, duration);
-		LinkedList<Vertex> topOrder = (LinkedList<Vertex>) DFS.topologicalOrder1(g);
-		if(topOrder==null) {
-			System.out.println("here");
-			return null;
+		for(int i=1; i<=g.size(); i++) {
+			p.setDuration(g.getVertex(i), duration[i-1]);		
 		}
-		
-		for(Vertex u : topOrder) {
-			for(Edge edge: g.outEdges(u)) {
-				Vertex v = edge.otherEnd(u);
-				int ec = p.getDuration(v)+p.ec(u);
-				if(ec > p.ec(v)) {
-					p.setEC(v, p.getDuration(v)+p.ec(u));
-				}
-			}
-		}
-		Vertex t = g.getVertex(g.size());
-		int maxTime = p.ec(t);
-		for(Vertex u : g) {
-			p.setLC(u, maxTime);
-		}
-		Iterator<Vertex> it = topOrder.descendingIterator();
-		while(it.hasNext()) {
-			Vertex u = it.next();
-			for(Edge edge : g.outEdges(u)) {
-				Vertex v = edge.otherEnd(u);
-				int lc = p.lc(v)-p.getDuration(v);
-				if(lc<p.lc(u)) {
-					p.setLC(u, lc);
-				}
-			}
-			int slack = p.lc(u)-p.ec(u);
-			p.setSlack(u, slack);
-			if(slack==0) {
-				criticalPath++;
-			}
-		}
-		p.setCriticalPath(criticalPath);
+		p.pert();
 		return p;
 	}
 
-	private static void addSourceAndTarget(PERT p, Graph g, int[] duration) {
+	private void addSourceAndTarget(Graph g) {
 		
 		Vertex s = g.getVertex(1);
-		p.setDuration(s, 0);
 		Vertex t = g.getVertex(g.size());
-		p.setDuration(t, 0);
 		int m = g.edgeSize();
 		for(int i=2; i<g.size(); i++) {
-			p.setDuration(g.getVertex(i), duration[i-1]);
 			g.addEdge(s, g.getVertex(i), 1, ++m);
 			g.addEdge(g.getVertex(i), t, 1, ++m);
 		}
 	}
 
-	public static void main(String[] args) throws Exception {
-		String graph = "11 12   2 4 1   2 5 1   3 5 1   3 6 1   4 7 1   5 7 1   5 8 1   6 8 1   6 9 1   7 10 1   8 10 1   9 10 1      0 3 2 3 2 1 3 2 4 1 0";
-		Scanner in;
-		// If there is a command line argument, use it as file from which
-		// input is read, otherwise use input from string.
-		in = args.length > 0 ? new Scanner(new File(args[0])) : new Scanner(graph);
-		Graph g = Graph.readDirectedGraph(in);
-		g.printGraph(false);
-
-		int arr[] = {1,2,3,4,5,6,7,8,9,10,11};
-		PERT p = PERT.pert(g, arr);
-		for(Vertex u: g) {
-			p.setDuration(u, in.nextInt());
-		}
-		// Run PERT algorithm.  Returns null if g is not a DAG
-		if(p.pert()) {
-			System.out.println("Invalid graph: not a DAG");
-		} else {
-			System.out.println("Number of critical vertices: " + p.numCritical());
-			System.out.println("u\tEC\tLC\tSlack\tCritical");
-			for(Vertex u: g) {
-				System.out.println(u +"\t" + p.ec(u) + "\t" + p.lc(u) + "\t" + p.slack(u) + "\t" + p.critical(u));
-			}
-		}
-	}
+//	public static void main(String[] args) throws Exception {
+//		String graph = "11 12   2 4 1   2 5 1   3 5 1   3 6 1   4 7 1   5 7 1   5 8 1   6 8 1   6 9 1   7 10 1   8 10 1   9 10 1      0 3 2 3 2 1 3 2 4 1 0";
+//		Scanner in;
+//		// If there is a command line argument, use it as file from which
+//		// input is read, otherwise use input from string.
+//		in = args.length > 0 ? new Scanner(new File(args[0])) : new Scanner(graph);
+//		Graph g = Graph.readDirectedGraph(in);
+//		g.printGraph(false);
+//
+//		int arr[] = {1,2,3,4,5,6,7,8,9,10,11};
+//		PERT p = PERT.pert(g, arr);
+////		for(Vertex u: g) {
+////			p.setDuration(u, in.nextInt());
+////		}
+//		// Run PERT algorithm.  Returns null if g is not a DAG
+//		if(p.pert()) {
+//			System.out.println("Invalid graph: not a DAG");
+//		} else {
+//			System.out.println("Number of critical vertices: " + p.numCritical());
+//			System.out.println("u\tEC\tLC\tSlack\tCritical");
+//			for(Vertex u: g) {
+//				System.out.println(u +"\t" + p.ec(u) + "\t" + p.lc(u) + "\t" + p.slack(u) + "\t" + p.critical(u));
+//			}
+//		}
+//	}
 }

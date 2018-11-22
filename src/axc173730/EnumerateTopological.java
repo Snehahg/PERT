@@ -7,6 +7,7 @@ import rbk.Graph.GraphAlgorithm;
 import rbk.Graph.Timer;
 import rbk.Graph.Vertex;
 
+import java.io.FileNotFoundException;
 import java.util.Iterator;
 import java.util.Stack;
 
@@ -136,13 +137,13 @@ public class EnumerateTopological extends GraphAlgorithm<EnumerateTopological.En
 		return et.enumerateTopological(true);
 	}
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws FileNotFoundException {
 		//String string = "7 6	1 2 2	1 7 7	2 3 3	2 4 4	7 5 5	7 6 6 0";
 		//String string = "11 17	5 11 5	11 4 11	4 5 4	4 9 4	9 11 9	11 3 11	11 6 11		3 10 3	10 6 10	6 3 6	2 3 2	1 4 1	1 8 1	8 2 8	7 8 7	2 7 2";
 		String string  = "6 7	1 2 2	1 4 4	2 3 3	4 3 3	4 5 5	3 6 6	5 6 6";
 		int VERBOSE = 0;
-		if(args.length > 0) { VERBOSE = Integer.parseInt(args[0]); }
-		Graph g = Graph.readDirectedGraph(new java.util.Scanner(string));
+		if(args.length > 0) { VERBOSE = 0; }
+		Graph g = Graph.readDirectedGraph(new java.util.Scanner(new java.io.File(args[0])));
 		g.printGraph(false);
 		Graph.Timer t = new Graph.Timer();
 		long result;
