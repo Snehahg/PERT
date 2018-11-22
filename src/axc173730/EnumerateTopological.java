@@ -9,8 +9,11 @@ import rbk.Graph.Vertex;
 
 import java.io.FileNotFoundException;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.Stack;
 
+import axc173730.DFS.DFSVertex;
 import rbk.Graph;
 import rbk.Graph.Edge;
 import rbk.Graph.Factory;
@@ -27,26 +30,8 @@ public class EnumerateTopological extends GraphAlgorithm<EnumerateTopological.En
 		print = false;
 		count = 0;
 		sel = new Selector();
-		Iterator<Vertex> it = this.g.iterator();
-		Vertex v = null;
-		while(it.hasNext()) {
-			 v = it.next();
-			if(v.inDegree()==0 && v.outDegree()!=0 && source==null) {
-				source = v;
-				System.out.println("Source : "+source);
-			}
-			if(v.outDegree()==0 && v.inDegree()!=0 && target== null) {
-				target= v;
-				System.out.println("target : "+target);
-			}
-			if(source!=null && target!=null) {
-				break;
-			}
-		}
-		if(target==null) {
-			target=v;
-			System.out.println("target : "+target);
-		}
+		target = g.getVertex(g.size());
+		source = g.getVertex(1);
 		arr = new Vertex[this.g.size()];
 	}
 
@@ -105,23 +90,71 @@ public class EnumerateTopological extends GraphAlgorithm<EnumerateTopological.En
 	// To do: LP4; return the number of topological orders of g
 	public long enumerateTopological(boolean flag) {
 		print = flag;
-		enumerateTopological(source,0);
+		DFS dfs = new DFS(g);
+		initializeDFS(dfs);
+		LinkedList<Vertex> zeroList = checkZeroIndegree(dfs);
+		for(Vertex source : zeroList) {
+			this.source = source;
+			enumerateTopological(dfs, source,0);
+		}
 		return count;
 	}
 
-	private void enumerateTopological(Vertex u, int i) {
-		if(sel.select(u)) {
-			arr[i] = u;
+	private void initializeDFS(DFS dfs) {
+		Iterator<Vertex> git = g.iterator();
+		while(git.hasNext()) {
+			Vertex u = git.next();
+			DFSVertex vertex = dfs.get(u);
+			vertex.indegree = u.inDegree();
+			
+		}
 		
-			if(u.equals(target)) {
-				sel.visit(arr, i);
-			}else {
-				for(Edge edge : this.g.outEdges(u)) {
-					enumerateTopological(edge.otherEnd(u), i+1);
+	}
+
+	private void enumerateTopological(DFS dfs, Vertex u, int index) {
+		
+		arr[index]=u;
+		if(index==g.size()-1) {
+			sel.visit(arr, index);
+			return;
+		}
+		else {
+			
+			dfs.get(u).seen =true;
+			for(Edge edge: g.outEdges(u)) {
+				Vertex v = edge.otherEnd(u);
+				DFSVertex vertex = dfs.get(v);
+				if(!vertex.seen) {
+					vertex.indegree--;
+				}
+			}
+			LinkedList<Vertex> zeroList = checkZeroIndegree(dfs);
+			for(Vertex vertex : zeroList) {
+				enumerateTopological(dfs,vertex, index+1);
+			}
+			dfs.get(u).seen = false;
+			for(Edge edge: g.outEdges(u)) {
+				Vertex v = edge.otherEnd(u);
+				DFSVertex vertex = dfs.get(v);
+				if(!vertex.seen) {
+					vertex.indegree++;
 				}
 			}
 		}
-		
+	}
+	
+	private LinkedList<Vertex> checkZeroIndegree(DFS dfs){
+		Iterator<Vertex> git = g.iterator();
+		LinkedList<Vertex> zeroList = new LinkedList<Vertex>();
+		while(git.hasNext()) {
+			Vertex u = git.next();
+			DFSVertex vertex = dfs.get(u);
+			if(vertex.indegree==0 && !dfs.get(u).seen) {
+				zeroList.add(u);
+			}
+			
+		}
+		return zeroList;
 	}
 	//-------------------static methods----------------------
 
