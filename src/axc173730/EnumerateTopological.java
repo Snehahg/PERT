@@ -104,8 +104,7 @@ public class EnumerateTopological extends GraphAlgorithm<EnumerateTopological.En
 		Iterator<Vertex> git = g.iterator();
 		while(git.hasNext()) {
 			Vertex u = git.next();
-			DFSVertex vertex = dfs.get(u);
-			vertex.indegree = u.inDegree();
+			dfs.get(u).indegree = u.inDegree();
 			
 		}
 		
@@ -124,9 +123,9 @@ public class EnumerateTopological extends GraphAlgorithm<EnumerateTopological.En
 			for(Edge edge: g.outEdges(u)) {
 				Vertex v = edge.otherEnd(u);
 				DFSVertex vertex = dfs.get(v);
-				if(!vertex.seen) {
+//				if(!vertex.seen) {
 					vertex.indegree--;
-				}
+//				}
 			}
 			LinkedList<Vertex> zeroList = checkZeroIndegree(dfs);
 			for(Vertex vertex : zeroList) {
@@ -136,9 +135,9 @@ public class EnumerateTopological extends GraphAlgorithm<EnumerateTopological.En
 			for(Edge edge: g.outEdges(u)) {
 				Vertex v = edge.otherEnd(u);
 				DFSVertex vertex = dfs.get(v);
-				if(!vertex.seen) {
+//				if(!vertex.seen) {
 					vertex.indegree++;
-				}
+//				}
 			}
 		}
 	}
