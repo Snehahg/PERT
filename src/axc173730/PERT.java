@@ -17,13 +17,15 @@ import java.util.LinkedList;
 import java.util.Scanner;
 
 public class PERT extends GraphAlgorithm<PERT.PERTVertex> {
-	int criticalNodes;
-	int criticalPath;
+	int criticalNodes;//number of critical nodes
+	int criticalPath;//length of the critical path
+	
 	public static class PERTVertex implements Factory {
-		int ec;
-		int lc;
-		int slack;
-		int duration;
+		int ec;//earliest completion time of the task(node)
+		int lc;//latest completion time of the task(node)
+		int slack;//slack available for the task(node)
+		int duration;//duration of the task(node)
+		
 		public PERTVertex(Vertex u) {
 			ec=0;
 			lc=0;
@@ -44,47 +46,51 @@ public class PERT extends GraphAlgorithm<PERT.PERTVertex> {
 	public int getDuration(Vertex u) {
 		return get(u).duration;
 	}
+	/**
+	 * Calculates earliest completion time, latest completion time and slack for each node. Also calculates the
+	 * number of critical nodes and the sets the critical path length
+	 * @return
+	 */
 	public boolean pert() {
 		int criticalNodes = 0;
-		addSourceAndTarget(g);
+		addSourceAndTarget(g);//adding source and target nodes to the graph
 		LinkedList<Vertex> topOrder = (LinkedList<Vertex>) DFS.topologicalOrder1(g);
 		if(topOrder==null) {
-			System.out.println("here");
 			return true;
 		}
 		
 		for(Vertex u : topOrder) {
 			for(Edge edge: g.outEdges(u)) {
-				Vertex v = edge.otherEnd(u);
+				Vertex v = edge.otherEnd(u);//for edge u,v
 				int ec = getDuration(v)+ec(u);
 				if(ec > ec(v)) {
-					setEC(v, ec);
+					setEC(v, ec);//sets the ec of v as -> duration of v + ec of u
 				}
 			}
 		}
-		Vertex t = g.getVertex(g.size());
+		Vertex t = g.getVertex(g.size());//target
 		int maxTime = ec(t);
 		for(Vertex u : g) {
 			setLC(u, maxTime);
 		}
-		Iterator<Vertex> it = topOrder.descendingIterator();
+		Iterator<Vertex> it = topOrder.descendingIterator();//reverse topological order
 		while(it.hasNext()) {
 			Vertex u = it.next();
 			for(Edge edge : g.outEdges(u)) {
-				Vertex v = edge.otherEnd(u);
+				Vertex v = edge.otherEnd(u);//for edge u,v
 				int lc = lc(v)-getDuration(v);
 				if(lc<lc(u)) {
-					setLC(u, lc);
+					setLC(u, lc);//sets the lc of u as -> lc of v - duration of v
 				}
 			}
 			int slack = lc(u)-ec(u);
 			setSlack(u, slack);
-			if(slack==0) {
-				criticalNodes++;
+			if(slack==0) {//if earliest completion time and latest completion time of a vertex are same
+				criticalNodes++;//calculating number of critical nodes
 			}
 		}
 		setCriticalNode(criticalNodes);
-		setCriticalPath(ec(t));
+		setCriticalPath(ec(t));//time needed to complete the entire project
 		return false;
 	}
 	public int ec(Vertex u) {
@@ -115,6 +121,11 @@ public class PERT extends GraphAlgorithm<PERT.PERTVertex> {
 	public void setCriticalPath(int cp) {
 		criticalPath = cp;
 	}
+	/**
+	 * 
+	 * @param u
+	 * @return true if the node is critical, else false
+	 */
 	public boolean critical(Vertex u) {
 		return slack(u)==0;
 	}
@@ -128,23 +139,35 @@ public class PERT extends GraphAlgorithm<PERT.PERTVertex> {
 	}
 
 	// setDuration(u, duration[u.getIndex()]);
+	/**
+	 * sets the duration for each task and calls the pert method to calculate the critical path, find the critical tasks and the slack 
+	 * available for different tasks
+	 * @param g
+	 * @param duration
+	 * @return
+	 */
 	public static PERT pert(Graph g, int[] duration) {
 
 		PERT p = new PERT(g);
 		for(int i=1; i<=g.size(); i++) {
 			p.setDuration(g.getVertex(i), duration[i-1]);		
 		}
-		p.pert();
+		if(p!=null) {
+			p.pert();
+		}
 		return p;
 	}
 
+	/**
+	 * connects source and target vertices to every other vertex in the graph
+	 * @param g
+	 */
 	private void addSourceAndTarget(Graph g) {
-		
 		Vertex s = g.getVertex(1);
 		Vertex t = g.getVertex(g.size());
 		int m = g.edgeSize();
 		for(int i=2; i<g.size(); i++) {
-			g.addEdge(s, g.getVertex(i), 1, ++m);
+			g.addEdge(s, g.getVertex(i), 1, ++m);//third parameter is weight and each time a new edge number is given
 			g.addEdge(g.getVertex(i), t, 1, ++m);
 		}
 	}
