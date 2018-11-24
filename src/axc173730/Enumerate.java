@@ -1,6 +1,9 @@
 
 /** Starter code for permutations and combinations of distinct items
- *  @author
+ * @author akashchand
+ * @author pushpitapanigrahi
+ * @author snehahullivangirisha
+ * @author deekshalakhshmeeshmestha
  **/
 
 package axc173730;
@@ -37,9 +40,11 @@ public class Enumerate<T> {
 	// -------------Methods of Enumerate class: To do-----------------
 
 	/**
-	 *n = arr.length, choose k things, d elements arr[0..d-1] done
-	 *c more elements are needed from arr[d..n-1]. d = k-c.
-	 * @param c
+	 * n = arr.length, choose k things, d elements. LoopInvariant : arr[0..d-1] done
+	 * c more elements are needed from arr[d..n-1]. d = k-c.
+	 * 
+	 * @param c,
+	 *            no of elements to select
 	 */
 	public void permute(int c) {
 		// visit the permutation when c becomes zero
@@ -48,10 +53,16 @@ public class Enumerate<T> {
 		} else {
 			// fill the d+1 spot with arr[d] element
 			int d = k - c;
-			permute(c - 1);
+			if (app.select(arr[d])) {
+				permute(c - 1);
+			}
+			app.unselect(arr[d]);
 			for (int i = d + 1; i < this.arr.length; i++) {
 				swap(d, i);// exchange elements to get all permutations
-				permute(c - 1);
+				if (app.select(arr[d])) { // proceed only for approved nodes
+					permute(c - 1);
+				}
+				app.unselect(arr[d]);
 				swap(d, i);// restore original order
 			}
 
