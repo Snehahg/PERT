@@ -10,7 +10,6 @@ import rbk.Graph.Vertex;
 import java.io.FileNotFoundException;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.Queue;
 import java.util.Stack;
 
 import axc173730.DFS.DFSVertex;
@@ -25,6 +24,7 @@ public class EnumerateTopological extends GraphAlgorithm<EnumerateTopological.En
 	Vertex source;
 	Vertex target;
 	Vertex[] arr;
+	DFS dfs;
 	public EnumerateTopological(Graph g) {
 		super(g, new EnumVertex());
 		print = false;
@@ -33,6 +33,7 @@ public class EnumerateTopological extends GraphAlgorithm<EnumerateTopological.En
 		target = g.getVertex(g.size());
 		source = g.getVertex(1);
 		arr = new Vertex[this.g.size()];
+		dfs = new DFS(g);
 	}
 
 	static class EnumVertex implements Factory {
@@ -44,33 +45,26 @@ public class EnumerateTopological extends GraphAlgorithm<EnumerateTopological.En
 		Stack<Vertex> stack = new Stack<>();
 		@Override
 		public boolean select(Vertex u) {
-			if(stack.isEmpty()) {
-				if(u.equals(source)) {
-					stack.push(source);
-					return true;
+			if(dfs.get(u).indegree==0) {
+				for(Edge edge: g.outEdges(u)) {
+					Vertex v = edge.otherEnd(u);
+					DFSVertex vertex = dfs.get(v);
+						vertex.indegree--;
 				}
-				else {
-					return false;
-				}
+				return true;
 			}else {
-				Vertex head = stack.peek();
-				for(Edge edge : g.outEdges(head)) {
-					if(edge.otherEnd(head).equals(u)) {
-						stack.push(u);
-						return true;
-					}
-					else {
-						return false;
-					}
-				}
+				return false;
 			}
-			return true;
 		}
 
 		@Override
 		public void unselect(Vertex u) {
-			if(!stack.isEmpty()) {
-				stack.pop();
+			if(dfs.get(u).indegree==0) {
+				for(Edge edge: g.outEdges(u)) {
+					Vertex v = edge.otherEnd(u);
+					DFSVertex vertex = dfs.get(v);
+						vertex.indegree++;
+				}
 			}
 		}
 
@@ -90,17 +84,18 @@ public class EnumerateTopological extends GraphAlgorithm<EnumerateTopological.En
 	// To do: LP4; return the number of topological orders of g
 	public long enumerateTopological(boolean flag) {
 		print = flag;
-		DFS dfs = new DFS(g);
-		initializeDFS(dfs);
-		LinkedList<Vertex> zeroList = checkZeroIndegree(dfs);
-		for(Vertex source : zeroList) {
-			this.source = source;
-			enumerateTopological(dfs, source,0);
+		initializeDFS();
+		int i=0;
+		for(Vertex vertex : g) {
+			arr[i]= vertex;
+			i++;
 		}
+		Enumerate<Vertex> enumTopological = new Enumerate<>(arr, sel);
+		enumTopological.permute(g.size());
 		return count;
 	}
 
-	private void initializeDFS(DFS dfs) {
+	private void initializeDFS() {
 		Iterator<Vertex> git = g.iterator();
 		while(git.hasNext()) {
 			Vertex u = git.next();
@@ -111,51 +106,6 @@ public class EnumerateTopological extends GraphAlgorithm<EnumerateTopological.En
 		
 	}
 
-	private void enumerateTopological(DFS dfs, Vertex u, int index) {
-		
-		arr[index]=u;
-		if(index==g.size()-1) {
-			sel.visit(arr, index);
-			return;
-		}
-		else {
-			
-			dfs.get(u).seen =true;
-			for(Edge edge: g.outEdges(u)) {
-				Vertex v = edge.otherEnd(u);
-				DFSVertex vertex = dfs.get(v);
-				if(!vertex.seen) {
-					vertex.indegree--;
-				}
-			}
-			LinkedList<Vertex> zeroList = checkZeroIndegree(dfs);
-			for(Vertex vertex : zeroList) {
-				enumerateTopological(dfs,vertex, index+1);
-			}
-			dfs.get(u).seen = false;
-			for(Edge edge: g.outEdges(u)) {
-				Vertex v = edge.otherEnd(u);
-				DFSVertex vertex = dfs.get(v);
-				if(!vertex.seen) {
-					vertex.indegree++;
-				}
-			}
-		}
-	}
-	
-	private LinkedList<Vertex> checkZeroIndegree(DFS dfs){
-		Iterator<Vertex> git = g.iterator();
-		LinkedList<Vertex> zeroList = new LinkedList<Vertex>();
-		while(git.hasNext()) {
-			Vertex u = git.next();
-			DFSVertex vertex = dfs.get(u);
-			if(vertex.indegree==0 && !dfs.get(u).seen) {
-				zeroList.add(u);
-			}
-			
-		}
-		return zeroList;
-	}
 	//-------------------static methods----------------------
 
 	

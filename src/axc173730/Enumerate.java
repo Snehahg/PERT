@@ -43,10 +43,16 @@ public class Enumerate<T> {
     		visit(this.arr);
     	}else {
     		int d = k-c;
-    		permute(c-1);
+    		if(app.select(arr[d])) {
+    			permute(c-1);
+    		}
+    		app.unselect(arr[d]);
     		for(int i=d+1;i<this.arr.length;i++) {
     			swap(d,i);
-    			permute(c-1);
+    			if(app.select(arr[d])) {
+        			permute(c-1);
+        		}
+    			app.unselect(arr[d]);
     			swap(d,i);
     		}
     		
@@ -115,7 +121,8 @@ public class Enumerate<T> {
 	e.permute(k);
 	return e;
     }
-
+    
+    
     // Enumerate combinations of k items out of n = arr.length
     public static<T> Enumerate<T> combine(T[] arr, int k) {
 	Enumerate<T> e = new Enumerate<>(arr, k);
